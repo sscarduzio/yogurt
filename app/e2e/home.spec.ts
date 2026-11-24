@@ -287,7 +287,7 @@ test('meeting rows fill a laptop pane and stay centred in their own column throu
           const list = card.closest<HTMLElement>('.native-library')!
           const hover = card.closest('.native-meeting-row')!
           const toggle = document.getElementById('home-agenda-toggle')!
-          const title = list.querySelector('h1')!, day = list.querySelector('[data-testid="past-day"]')!
+          const heading = list.querySelector('.library-page-heading')!, day = list.querySelector('[data-testid="past-day"]')!
           let error = 0
           function measure() {
             const css = getComputedStyle(list)
@@ -297,7 +297,7 @@ test('meeting rows fill a laptop pane and stay centred in their own column throu
             const centre = left + available / 2
             const row = hover.getBoundingClientRect()
             error = Math.max(error, Math.abs(row.left - (centre - width / 2)), Math.abs(row.width - width))
-            for (const el of [title, day]) {
+            for (const el of [heading, day]) {
               const box = el.getBoundingClientRect()
               error = Math.max(error, Math.abs(box.left - row.left - 8), Math.abs(row.right - box.right - 8))
             }
@@ -341,14 +341,25 @@ test('wide Home with both sidebars hidden in light and dark', async ({}, testInf
     await expect(page.getByTestId('past-note-folder').first()).toHaveText('Acme')
     const sidebar = page.getByRole('complementary', { name: 'Main navigation' })
     const agenda = page.getByRole('complementary', { name: 'Agenda' })
+    const search = page.getByRole('button', { name: 'Search meetings', exact: true })
     await expect(sidebar).toBeVisible()
     await expect(agenda).toBeVisible()
+    await expect(search).toBeHidden()
     await page.screenshot({ path: testInfo.outputPath('home-wide-1440-light-sidebars-open.png') })
-    await page.getByRole('button', { name: 'Hide Agenda' }).click()
     await page.getByTestId('sidebar-collapse').click()
     await page.mouse.move(720, 40)
-    await expect(agenda).toBeHidden()
     await expect(sidebar).toBeHidden()
+    await search.click()
+    await expect(page.getByTestId('search-input')).toBeFocused()
+    await expect(page.getByTestId('search-scope')).toHaveCount(0)
+    await page.getByTestId('search-input').fill('Budget review')
+    await expect(page.getByTestId('search-result').first()).toContainText('Budget review')
+    await page.keyboard.press('Escape')
+    await expect(search).toBeFocused()
+    await page.getByRole('button', { name: 'Hide Agenda' }).click()
+    await page.mouse.move(720, 40)
+    await expect(agenda).toBeHidden()
+    await expect(search).toBeVisible()
     for (const width of [1440, 1920]) {
       await page.setViewportSize({ width, height: 900 })
       await expect(page.locator('.native-meeting-row').first()).toHaveCSS('width', '1080px')
