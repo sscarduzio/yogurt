@@ -160,9 +160,7 @@
 .workspace:dir(rtl) .workspace-toolbar[data-note=true]:has(.notes-download-status) { padding-inline-end:185px; }
 .native-library { position:relative;padding:29px 26px 30px;min-width:0;overflow:auto; }
 /* Keep the scroll area full width. The hover background extends 8px past the content on each side. */
-@media (width > 1728px) {
-  :is(.native-home,.native-folder)>.native-library>* { --meeting-list-max-width:1520px;inline-size:min(100%,calc(var(--meeting-list-max-width) - 16px));margin-inline:auto; }
-}
+:is(.native-home,.native-folder)>.native-library>* { --meeting-list-max-width:1080px;inline-size:min(100%,calc(var(--meeting-list-max-width) - 16px));margin-inline:auto; }
 .native-library>h1 { font-size:20px;line-height:26px;font-weight:600;letter-spacing:-.55px;margin-bottom:9px; }
 .native-meeting-day { margin-top:25px; }
 .native-meeting-day>h2,.meeting-day-exit { font-size:10px;line-height:14px;font-weight:500;color:var(--muted);margin-bottom:9px; }

@@ -275,7 +275,7 @@ test('meeting rows fill a laptop pane and stay centred in their own column throu
     const gap = page.locator('.workspace-sidebar-gap')
     for (const direction of ['ltr', 'rtl']) {
       await page.evaluate(dir => { document.documentElement.dir = dir }, direction)
-      for (const [width, sidebar] of [[720, 208], [868, 208], [1728, 208], [1728, 0], [1920, 208], [2560, 208]]) {
+      for (const [width, sidebar] of [[720, 208], [868, 208], [1440, 208], [1440, 0], [1728, 208], [1728, 0], [1920, 208], [2560, 208]]) {
         await page.setViewportSize({ width, height: 760 })
         // Let the automatic sidebar collapse on crossing 900px finish before choosing a state.
         await page.evaluate(() => new Promise<void>(done => requestAnimationFrame(() => requestAnimationFrame(() => done()))))
@@ -293,7 +293,7 @@ test('meeting rows fill a laptop pane and stay centred in their own column throu
             const css = getComputedStyle(list)
             const left = list.getBoundingClientRect().left + list.clientLeft + parseFloat(css.paddingLeft)
             const available = list.clientWidth - parseFloat(css.paddingLeft) - parseFloat(css.paddingRight)
-            const width = Math.min(available + 16, innerWidth <= 1728 ? Infinity : 1520)
+            const width = Math.min(available + 16, 1080)
             const centre = left + available / 2
             const row = hover.getBoundingClientRect()
             error = Math.max(error, Math.abs(row.left - (centre - width / 2)), Math.abs(row.width - width))
@@ -326,6 +326,40 @@ test('meeting rows fill a laptop pane and stay centred in their own column throu
   } finally { await app.close() }
 })
 
+test('wide Home with both sidebars hidden in light and dark', async ({}, testInfo) => {
+  const { app, page } = await launch()
+  try {
+    await fake(app, 'manyMeetings', { n: 12, clean: true })
+    await page.evaluate(async () => {
+      const folder = await window.yogurt.folders.create('Acme')
+      const meetings = await window.yogurt.meetings.cards({ limit: 12 })
+      await window.yogurt.folders.add(folder!.id, meetings.find(m => m.title === 'Customer call with Acme')!.id)
+    })
+    await page.setViewportSize({ width: 1440, height: 900 })
+    await page.emulateMedia({ colorScheme: 'light', reducedMotion: 'reduce' })
+    await page.reload()
+    await expect(page.getByTestId('past-note-folder').first()).toHaveText('Acme')
+    const sidebar = page.getByRole('complementary', { name: 'Main navigation' })
+    const agenda = page.getByRole('complementary', { name: 'Agenda' })
+    await expect(sidebar).toBeVisible()
+    await expect(agenda).toBeVisible()
+    await page.screenshot({ path: testInfo.outputPath('home-wide-1440-light-sidebars-open.png') })
+    await page.getByRole('button', { name: 'Hide Agenda' }).click()
+    await page.getByTestId('sidebar-collapse').click()
+    await page.mouse.move(720, 40)
+    await expect(agenda).toBeHidden()
+    await expect(sidebar).toBeHidden()
+    for (const width of [1440, 1920]) {
+      await page.setViewportSize({ width, height: 900 })
+      await expect(page.locator('.native-meeting-row').first()).toHaveCSS('width', '1080px')
+      for (const theme of ['light', 'dark'] as const) {
+        await page.emulateMedia({ colorScheme: theme, reducedMotion: 'reduce' })
+        await page.screenshot({ path: testInfo.outputPath(`home-wide-${width}-${theme}.png`) })
+      }
+    }
+  } finally { await app.close() }
+})
+
 test('wide folder and Trash pages centre their headings and empty states on the same measure', async () => {
   const { app, page } = await launch()
   try {
@@ -345,7 +379,7 @@ test('wide folder and Trash pages centre their headings and empty states on the 
         })
       })
       for (const box of boxes) {
-        expect(box.width).toBe(1520 - 16)
+        expect(box.width).toBe(1080 - 16)
         expect(Math.abs(box.offset)).toBeLessThan(1)
       }
     }
